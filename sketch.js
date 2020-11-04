@@ -2,46 +2,34 @@ const Engine = Matter.Engine;
 const World= Matter.World;
 const Bodies = Matter.Bodies;
 const Constraint = Matter.Constraint;
+const Body = Matter.Body;
 
 var engine, world;
-
-//game objects
-var box1,box2,box3,box4,box5; 
-var pig1,pig3;
-var log1,log3,log4,log5;
-var bird, slingshot,platform;
-
-//game sounds
-var birdSelectSound,birdFlySound,pigSnortSound;
-
-//background images
 var backgroundImg;
-var bg = "sprites/bg1.png";
+var bird, slingshot;
 
-
-//games state
 var gameState = "onSling";
-
-//score
 var score = 0;
 
-//birds
-var birds=[];
+//creating birds array
+var birds = [];
 
 function preload() {
-
     getBackgroundImg();
-    bgImg=loadImage(bg);
+	bgImg = loadImage("sprites/bg1.png");
 
-    birdFlySound=loadSound("sounds/bird_flying.mp3")
-    pigSnortSound=loadSound("sounds/pig_snort.mp3")
-    birdSelectSound=loadSound("sounds/bird_select.mp3")
-    
+    //birdimages
+    redbird = loadImage("sprites/redbird.png");
+    bluebird = loadImage("sprites/bluebird.png");
+    yellowbird = loadImage("sprites/yellowbird.png");
+
+    //sounds
+    birdselectsound = loadSound("sounds/bird_select.mp3");
+    birdflysound = loadSound("sounds/bird_flying.mp3");
 }
 
 function setup(){
-    var canvas = createCanvas(1200,400);
-    canvas.position(15, 70);
+    createCanvas(1200,400);
     engine = Engine.create();
     world = engine.world;
 
@@ -63,61 +51,46 @@ function setup(){
     log4 = new Log(760,120,150, PI/7);
     log5 = new Log(870,120,150, -PI/7);
 
-    bird = new Bird(200,50);    
-    bird2 = new Bird(150,170);   
-    bird3 = new Bird(100,170);     
-    bird4 = new Bird(50,170);    
+    bird = new Bird(200,50);
+    bird2 = new Bird(150,170);
+    bird3 = new Bird(100,170);
 
-    birds.push(bird4)
-    birds.push(bird3)
-    birds.push(bird2)
-    birds.push(bird)
+    //pushing birds to the array
+    birds.push(bird3);
+    birds.push(bird2);
+    birds.push(bird);
 
     slingshot = new SlingShot(bird.body,{x:200, y:50});
+
+    //displaying the refresh button
+    refresh = createImg("sprites/refresh.png");
+    refresh.position(15, 10);
+
 }
 
 function draw(){
-    
+
+    //background 
     if(backgroundImg){
         background(backgroundImg);
-        
-        noStroke();
-        textFont("Impact")
-        textSize(20)
-        fill("Red")
-        text("Score : " + score, width-300, 20); 
-        
-        if(birds.length>0){
-            text("Press Space Key for Next Bird", width/2-200, 25); 
-            text("Bird :  "+birds.length,width/2-100, 60)
-           
-        }
-        else{
-            text("Click on 'Reload Button' to reload the Game Level",width/2-200, 70)
-        }
-        
     }
-    else{
-        //background("lightblue");
-        background(bgImg);
-        noStroke();
-        textFont("Impact")
-        textSize(20)
-        fill("Red")
-        text("Score : " + score, width-300, 20); 
-        
-        if(birds.length>0){
-            text("Press Space Key for Next Bird", width/2-200, 25); 
-            text("Bird :  "+birds.length,width/2-100, 60)
-            
-        }
-        else{
-            text("Click on 'Reload Button' to reload the Game Level",width/2-200, 70)
-        }
-         
-    }
+	else{
+		background(bgImg);
+	}
+	
+
+    //display score
+    textStyle(BOLD);
+    textSize(25);
+    fill(146,42,42);
+    text("Score: " + score, width-150, 50);
+
+    //if mouseclicked on reload button then call reset() function
+    refresh.mousePressed(reset);
+
     Engine.update(engine);
     
+    //displaying the bodies
     box1.display();
     box2.display();
     ground.display();
@@ -135,51 +108,78 @@ function draw(){
     log4.display();
     log5.display();
 
-    bird.display();
-    bird2.display();
-    bird3.display();
-    bird4.display();
+    platform.display(); 
 
-    platform.display();
-   
-    slingshot.display(); 
+     //displaying colorful birds
+     push();
+     imageMode(CENTER);
+     image(redbird, bird.body.position.x,bird.body.position.y, 50,50);
+     image(bluebird, bird2.body.position.x,bird2.body.position.y, 45,45);
+     image(yellowbird, bird3.body.position.x,bird3.body.position.y, 50,50);
+     pop();
+
+    slingshot.display();  
+    
+    //instructions
+    if(gameState==="launched"){
+
+        if(birds.length>0){
+            fill(146,42,42);
+            text("Press 'Space' for Next Bird", 480, 50);        
+        }
+        else{
+            fill(146,42,42);
+            text("Click on 'Reload' to play again!",450, 50);
+        }
+
+        //when the score reaches 400 then game ends
+        if(score === 400){
+            gameState = "end";
+        }
+
+    }
+
+    //end state
+    if(gameState==="end"){
+        fill(146,42,42);
+        text("Game Over\nClick on 'Reload' to play again!",450,50);
+    }
     
 }
 
-//pull the bird with the rubber band when mouse is dragged
+//reset function to reload the page
+function reset(){
+    location.reload();
+}
+
+//bird will be launched limited to how the sling is dragged
+//and not in launched state
 function mouseDragged(){
-    if (gameState!=="launched"){
-        Matter.Body.setPosition(birds[birds.length-1].body, {x: mouseX , y: mouseY});
-        Matter.Body.applyForce(birds[birds.length-1].body, birds[birds.length-1].body.position, {x:5,y:-5})
-        birdSelectSound.play()
-        return false;
+    if(mouseX >= 0 && mouseX < 200 && gameState!== "launched"){
+        Body.setPosition(birds[birds.length-1].body, {x: mouseX , y: mouseY});
+        birdflysound.play();
     }
 }
-//fly the bird when mouse is released
+
+//bird will fly once mouse is released
 function mouseReleased(){
     slingshot.fly();
-    birdFlySound.play()
+    //removing the bird that flew from the array
     birds.pop();
     gameState = "launched";
-    return false;
 }
 
-//set next bird when space key is pressed
+//attaching new bird when space is pressed and when in launched state
 function keyPressed(){
-    if((keyCode === 32) && gameState ==="launched"){
-        if(birds.length>=0 ){   
-            Matter.Body.setPosition(birds[birds.length-1].body, {x: 200 , y: 50});         
-            slingshot.attach(birds[birds.length-1].body);
-            
-            gameState = "onSling";
-            birdSelectSound.play()
-        }
-        
+    if(keyCode === 32 && gameState === "launched"){
+        Body.setPosition(birds[birds.length-1].body,{x:200,y:50});
+        slingshot.attach(birds[birds.length-1].body);
+        birdselectsound.play();
+        gameState="onSling";
     }
-    
 }
 
-
+//to get background image based on timezone
 async function getBackgroundImg(){
     var response = await fetch("http://worldtimeapi.org/api/timezone/Asia/Kolkata");
     var responseJSON = await response.json();
@@ -195,5 +195,4 @@ async function getBackgroundImg(){
     }
 
     backgroundImg = loadImage(bg);
-    
 }

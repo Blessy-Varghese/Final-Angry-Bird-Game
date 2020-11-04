@@ -6,11 +6,11 @@ class Pig extends BaseClass {
   }
 
  display(){
-  
    if(this.body.speed < 3){
     super.display();
    }
    else{
+     
      World.remove(world, this.body);
      push();
      this.Visiblity = this.Visiblity - 5;
@@ -23,8 +23,8 @@ class Pig extends BaseClass {
   score(){
     if (this.Visiblity < 0 && this.Visiblity > -1005){
       score++;
-      pigSnortSound.play();
     }
+
   }
 
 
